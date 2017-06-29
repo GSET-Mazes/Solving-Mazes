@@ -26,7 +26,13 @@ void loop() {
     turnRight();
     turnRight();
   } else if(option == 2) {
-    
+    if(random(2) == 0) {
+      turnLeft();
+    }
+  } else if(option == 3) {
+    if(random(2) == 0) {
+      turnRight();
+    }
   }
 }
 
