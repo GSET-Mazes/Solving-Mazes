@@ -19,6 +19,7 @@ void setup() {
 }
 
 void loop() {
+  
   option = runOption();
   if(option == 0) {
     moveForward();
@@ -28,10 +29,12 @@ void loop() {
   } else if(option == 2) {
     if(random(2) == 0) {
       turnLeft();
+      moveForwardOneCarLength();
     }
   } else if(option == 3) {
     if(random(2) == 0) {
       turnRight();
+      moveForwardOneCarLength();
     }
   }
 }
@@ -52,6 +55,13 @@ int runOption() {
 void moveForward() {
   analogWrite(rightMotorPin, 128);
   analogWrite(leftMotorPin, 128);
+}
+
+void moveForwardOneCarLength() {
+  encoderReset();
+  while (LeftWheel.read() < 90 && RightWheel.read() < 90) {
+    moveForward();
+  }
 }
 
 //Stops all motor movement
