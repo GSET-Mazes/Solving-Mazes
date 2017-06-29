@@ -19,27 +19,11 @@ void setup() {
 }
 
 void loop() {
-  
-  option = runOption();
-  if(option == 0) {
-    moveForward();
-  } else if(option == 1) {
-    turnRight();
-    turnRight();
-  } else if(option == 2) {
-    if(random(2) == 0) {
-      turnLeft();
-      moveForwardOneCarLength();
-    }
-  } else if(option == 3) {
-    if(random(2) == 0) {
-      turnRight();
-      moveForwardOneCarLength();
-    }
-  }
 }
 
-
+/**
+ * Check what turning options are available at specific point
+ */
 int runOption() {
   if(LeftSide.getDist() < 50 && RightSide.getDist() < 50 && Front.getDist() < 50) {
     return 1;
