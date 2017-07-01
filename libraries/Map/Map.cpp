@@ -13,8 +13,9 @@ int Map::setLength(int length) {
 	_pathLength = length;
 }
 
-void Map::addPath(int turn) {
+Map Map::addPath(int turn) {
 	_nodes[turn] = new Map(this, turn);
+	return _nodes[turn];
 }
 Map Map::getPath(int turn) {
 	return _nodes[turn];
