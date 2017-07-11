@@ -1,16 +1,20 @@
 //Imports necessary libraries for sensors
 #include <Encoder.h>
+#include <NewPing.h>
 
 const byte rightIRSensor = 0;
 const byte leftIRSensor = 0;
 const byte frontUSSensor = 0;
 const byte leftWheel = 0;
 const byte rightWheel = 0;
+const byte ultraSonicSensor = 0;
+
 
 Encoder leftWheelEncoder(leftWheel, pin); //second pin is a placeholder variable
 Encoder rightWheelEncoder(rightWheel, pin); //second pin is a placeholder variable
 pinMode(leftWheel, OUTPUT); //Right Motor
 pinMode(rightWheel, OUTPUT); //Left Motor
+NewPing sonar(ultraSonicSensor, ultraSonicSensor, 3000);
 
 //Initiates Session
 void setup() {
@@ -38,7 +42,7 @@ void loop() {
 int runOption() {
   double rightIRSensorValue = 39.4527 * (pow(0.0614007, (analogRead(rightIRSensor) / 200.0))) + 2.3;
   double leftIRSensorValue = 39.4527 * (pow(0.0614007, (analogRead(leftIRSensor) / 200.0))) + 2.3;
-  double frontUSSensorValue;
+  double frontUSSensorValue = sonar.ping_cm();
   if(rightIRSensorValue > 7) { //@ a 4-way
     return 1;
   } else if(leftIRSensorValue > 7 && frontUSSensorValue < 7) { //@ a 3-way
