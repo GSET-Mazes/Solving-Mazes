@@ -51,12 +51,13 @@ void loop() {
         break;
     }
   } else if(option == 3) {
-    do {
-      option = runOption();
-      moveBackward();
-    } while(option == 0 || option == 3);
-    moveBackwardOneCarLength();
-    
+    moveForwardOneCarLength();
+    if(random(2) == 0) {
+      turnRight();
+      moveForwardOneCarLength();
+    } else {
+      moveForwardOneCarLength();
+    }
   } else if(option == 4) {
     moveForwardOneCarLength();
     if(random(2) == 0) {
@@ -67,32 +68,40 @@ void loop() {
     }
   } else if(option == 5) {
     moveForwardOneCarLength();
-    if(random(2) == 0) {
-      turnRight();
-      moveForwardOneCarLength();
-    } else {
-      moveForwardOneCarLength();
-    }
+    turnRight();
+    moveForwardOneCarLength();
+  } else if(option == 6) {
+    moveForwardOneCarLength();
+    turnLeft();
+    moveForwardOneCarLength();
+  } else if(option == 7) {
+    turnLeft();
+    turnLeft();
   }
 }
 
 /**
  * Check what turning options are available at specific point
+ * //front has to be right at beginning of intersection
  */
 int runOption() {
   double rightIRSensorValue = 39.4527 * (pow(0.0614007, (analogRead(rightIRSensor) / 200.0))) + 2.3;
   double leftIRSensorValue = 39.4527 * (pow(0.0614007, (analogRead(leftIRSensor) / 200.0))) + 2.3;
   double frontUSSensorValue;
-  if(leftIRSensorValue > 7 && rightIRSensorValue > 7 && frontUSSensorValue > 10) { //@ a 4-way
+  if(leftIRSensorValue > 7 && rightIRSensorValue > 7 && frontUSSensorValue > 7) { //@ a 4-way
     return 1;
   } else if(leftIRSensorValue > 7 && rightIRSensorValue > 7) { //@ a 3-way
     return 2;
-  }else if(frontUSSensorValue < 10) { //@ the end
+  } else if(rightIRSensorValue > 7 && frontUSSensorValue > 7) { //@ another 3-way: front, right, back
     return 3;
-  }else if(leftIRSensorValue > 7) { //@ a left path
+  } else if(leftIRSensorValue > 7 && frontUSSensorValue > 7) { //@ another 3-way: front, left, back
     return 4;
-  } else if(rightIRSensorValue > 7) { //@ a right path
+  } else if(rightIRSensorValue > 7) { //@ a 2-way: right, back
     return 5;
+  } else if(leftIRSensorValue > 7) { //@ a 2-way: left, back
+    return 6;
+  } else if(frontUSSensorValue < 7) { //@ a dead-end
+    return 7;
   }
   return 0;
 }

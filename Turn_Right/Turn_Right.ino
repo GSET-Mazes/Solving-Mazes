@@ -1,37 +1,60 @@
 //Imports necessary libraries for sensors
-#include <SharpDistSensor.h>
 #include <Encoder.h>
 
-SharpDistSensor LeftSide(pin, 1); //pin is a placeholder variable
-SharpDistSensor RightSide(pin, 1); //pin is a placeholder variable
-SharpDistSensor Front(pin, 1); //pin is a placeholder variable
-Encoder LeftWheel(const pin = 2, pin); //second pin is a placeholder variable
-Encoder RightWheel(const pin = 3, pin); //second pin is a placeholder variable
-pinMode(rightMotorPin, OUTPUT); //Right Motor
-pinMode(leftMotorPin, OUTPUT); //Left Motor
+const byte rightIRSensor = 0;
+const byte leftIRSensor = 0;
+const byte frontUSSensor = 0;
+const byte leftWheel = 0;
+const byte rightWheel = 0;
+
+Encoder leftWheelEncoder(leftWheel, pin); //second pin is a placeholder variable
+Encoder rightWheelEncoder(rightWheel, pin); //second pin is a placeholder variable
+pinMode(leftWheel, OUTPUT); //Right Motor
+pinMode(rightWheel, OUTPUT); //Left Motor
 
 //Initiates Session
 void setup() {
-  LeftSide.setModel(SharpDistSensor::GP2Y0A51SK0F);
-  RightSide.setModel(SharpDistSensor::GP2Y0A51SK0F);
-  Front.setModel(SharpDistSensor::GP2Y0A51SK0F);
   Serial.begin(9600);
 }
 
 void loop() {
-  moveForward();
-  if (LeftSide.getDist() < 50 && RightSide.getDist() < 50 && Front.getDist() < 50) { //turns 180 if at a dead end
-    turnRight();
+  option = runOption();
+  if(option == 0) {
+    moveForward();
+  } else if(option == 1) {
+    moveForwardOneCarLength();
     turnRight();
     moveForwardOneCarLength();
-  } else if (RightSide.getDist()>50){ //turns right at each junction
-    turnRight();
+  } else if(option == 2) {
     moveForwardOneCarLength();
+    turnLeft();
+    moveForwardOneCarLength();
+  } else if(option == 3) {
+    turnLeft();
+    turnLeft();
   }
 }
 
-//move forward one car length
-//the values 90 and -90 are experimental
+int runOption() {
+  double rightIRSensorValue = 39.4527 * (pow(0.0614007, (analogRead(rightIRSensor) / 200.0))) + 2.3;
+  double leftIRSensorValue = 39.4527 * (pow(0.0614007, (analogRead(leftIRSensor) / 200.0))) + 2.3;
+  double frontUSSensorValue;
+  if(rightIRSensorValue > 7) { //@ a 4-way
+    return 1;
+  } else if(leftIRSensorValue > 7 && frontUSSensorValue < 7) { //@ a 3-way
+    return 2;
+  } else if(frontUSSensorValue < 7) { //@ a right path
+    return 3;
+  }
+  return 0;
+}
+
+
+//Starts both motors in the forward direction
+void moveForward() {
+  analogWrite(rightWheel, 128);
+  analogWrite(leftWheel, 128);
+}
 void moveForwardOneCarLength() {
   encoderReset();
   while (LeftWheel.read() < 90 && RightWheel.read() < 90) {
@@ -40,25 +63,31 @@ void moveForwardOneCarLength() {
   stopMoving();
 }
 
-//Starts both motors in the forward direction
-void moveForward() {
-  analogWrite(rightMotorPin, 128);
-  analogWrite(leftMotorPin, 128);
+void moveBackward() {
+  analogWrite(leftWheel, -128);
+  analogWrite(rightWheel, -128);
+}
+void moveBackwardOneCarLength() {
+  encoderReset();
+  while (LeftWheel.read() > -90 && RightWheel.read() > -90) {
+    moveBackward();
+  }
+  stopMoving();
 }
 
 //Stops all motor movement
 void stopMoving() {
-  analogWrite(rightMotorPin, 0);
-  analogWrite(leftMotorPin, 0);
+  analogWrite(rightWheel, 0);
+  analogWrite(leftWheel, 0);
 }
 
 //Makes robot turn left at a 90 degree angle
 //Current values of 90 and -90 are experimental
 void turnRight() {
   encoderReset();
-  while (LeftWheel.read() < 90 && RightWheel.read() > -90) {
-    analogWrite(rightMotorPin, -128);
-    analogWrite(leftMotorPin, 128);
+  while (leftWheelEncoder.read() < 90 && rightWheelEncoder.read() > -90) {
+    analogWrite(rightWheel, -128);
+    analogWrite(leftWheel, 128);
   }
   stopMoving();
 }
@@ -67,7 +96,7 @@ void turnRight() {
 //Current values of -90 and 90 are experimental
 void turnLeft() {
   encoderReset();
-  while (LeftWheel.read() > -90 && RightWheel.read() < 90) {
+  while (leftWheelEncoder.read() < -90 && rightWheelEncoder.read() > 90) {
     analogWrite(rightMotorPin, 128);
     analogWrite(leftMotorPin, -128);
   }
@@ -76,7 +105,7 @@ void turnLeft() {
 
 //Resets encoder value to 0 for comparison
 void encoderReset() {
-  LeftWheel.write(0);
-  RightWheel.write(0);
+  leftWheelEncoder.write(0);
+  rightWheelEncoder.write(0);
 }
 
