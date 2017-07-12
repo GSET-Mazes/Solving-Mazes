@@ -1,34 +1,41 @@
 //Imports necessary libraries for sensors
 #include <Encoder.h>
 #include <NewPing.h>
+#include <Map.h>
+#include <NewPing.h>
 
+//pins
 const byte rightIRSensor = 0;
 const byte leftIRSensor = 0;
 const byte frontUSSensor = 0;
+const byte leftEncoder1 = 0;
+const byte leftEncoder2 = 0;
+const byte rightEncoder1 = 0;
+const byte rightEncoder2 = 0;
 const byte leftWheel = 0;
 const byte rightWheel = 0;
-const byte ultraSonicSensor = 0;
+const byte ultraSonicTrigger = 0;
+const byte ultraSonicEcho = 0;
 
-Encoder leftWheelEncoder(leftWheel, pin); //second pin is a placeholder variable
-Encoder rightWheelEncoder(rightWheel, pin); //second pin is a placeholder variable
-pinMode(leftWheel, OUTPUT); //Right Motor
-pinMode(rightWheel, OUTPUT); //Left Motor
-NewPing sonar(ultraSonicSensor, ultraSonicSensor, 3000);
+Encoder leftWheelEncoder(leftEncoder1, leftEncoder2); //second pin is a placeholder variable
+Encoder rightWheelEncoder(rightEncoder1, rightEncoder2); //second pin is a placeholder variable
+NewPing sonar(ultraSonicTrigger, ultraSonicEcho, 3000);
 
 
 //Initiates Session
 void setup() {
-  
+  pinMode(leftWheel, OUTPUT); //Left Motor
+  pinMode(rightWheel, OUTPUT); //Right Motor 
   Serial.Begin(9600);
 }
 
 void loop() {
   option = runOption();
-  if(option == 0) {
+  if (option == 0) {
     moveForward();
-  } else if(option == 1) {
+  } else if (option == 1) {
     moveForwardOneCarLength();
-    switch(random(3)) {
+    switch (random(3)) {
       case 0:
         moveForwardOneCarLength();
         break;
@@ -41,9 +48,9 @@ void loop() {
         moveForwardOneCarLength();
         break;
     }
-  } else if(option == 2) {
+  } else if (option == 2) {
     moveForwardOneCarLength();
-    switch(random(2)) {
+    switch (random(2)) {
       case 0:
         turnLeft();
         moveForwardOneCarLength();
@@ -53,57 +60,57 @@ void loop() {
         moveForwardOneCarLength();
         break;
     }
-  } else if(option == 3) {
+  } else if (option == 3) {
     moveForwardOneCarLength();
-    if(random(2) == 0) {
+    if (random(2) == 0) {
       turnRight();
       moveForwardOneCarLength();
     } else {
       moveForwardOneCarLength();
     }
-  } else if(option == 4) {
+  } else if (option == 4) {
     moveForwardOneCarLength();
-    if(random(2) == 0) {
+    if (random(2) == 0) {
       turnLeft();
       moveForwardOneCarLength();
     } else {
       moveForwardOneCarLength();
     }
-  } else if(option == 5) {
+  } else if (option == 5) {
     moveForwardOneCarLength();
     turnRight();
     moveForwardOneCarLength();
-  } else if(option == 6) {
+  } else if (option == 6) {
     moveForwardOneCarLength();
     turnLeft();
     moveForwardOneCarLength();
-  } else if(option == 7) {
+  } else if (option == 7) {
     turnLeft();
     turnLeft();
   }
 }
 
 /**
- * Check what turning options are available at specific point
- * //front has to be right at beginning of intersection
- */
+   Check what turning options are available at specific point
+   //front has to be right at beginning of intersection
+*/
 int runOption() {
   double rightIRSensorValue = 39.4527 * (pow(0.0614007, (analogRead(rightIRSensor) / 200.0))) + 2.3;
   double leftIRSensorValue = 39.4527 * (pow(0.0614007, (analogRead(leftIRSensor) / 200.0))) + 2.3;
   double frontUSSensorValue = sonar.ping_cm();
-  if(leftIRSensorValue > 7 && rightIRSensorValue > 7 && frontUSSensorValue > 7) { //@ a 4-way
+  if (leftIRSensorValue > 7 && rightIRSensorValue > 7 && frontUSSensorValue > 7) { //@ a 4-way
     return 1;
-  } else if(leftIRSensorValue > 7 && rightIRSensorValue > 7) { //@ a 3-way
+  } else if (leftIRSensorValue > 7 && rightIRSensorValue > 7) { //@ a 3-way
     return 2;
-  } else if(rightIRSensorValue > 7 && frontUSSensorValue > 7) { //@ another 3-way: front, right, back
+  } else if (rightIRSensorValue > 7 && frontUSSensorValue > 7) { //@ another 3-way: front, right, back
     return 3;
-  } else if(leftIRSensorValue > 7 && frontUSSensorValue > 7) { //@ another 3-way: front, left, back
+  } else if (leftIRSensorValue > 7 && frontUSSensorValue > 7) { //@ another 3-way: front, left, back
     return 4;
-  } else if(rightIRSensorValue > 7) { //@ a 2-way: right, back
+  } else if (rightIRSensorValue > 7) { //@ a 2-way: right, back
     return 5;
-  } else if(leftIRSensorValue > 7) { //@ a 2-way: left, back
+  } else if (leftIRSensorValue > 7) { //@ a 2-way: left, back
     return 6;
-  } else if(frontUSSensorValue < 7) { //@ a dead-end
+  } else if (frontUSSensorValue < 7) { //@ a dead-end
     return 7;
   }
   return 0;
