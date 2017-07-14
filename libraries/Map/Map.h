@@ -5,27 +5,33 @@
 
 #include "Arduino.h"
 
+struct Node {
+	Node *_previousNode;
+	int _pathLength;
+	int _turn; //0 = straight, 1 = left, 2 = right
+	Node *_nodes[3] = {};
+	int _x;
+	int _y;
+	bool _isDeadEnd = false;
+};
+
 class Map {
 	public:
-		Map(Map *previousNode, int turn);
+		// Map(Map *previousNode, int turn);
 		Map();
-		int getX();
-		int getY();
-		void setPosition(int x, int y);
-		int getLength();
-		void setLength(int length);
-		Map getPath(int turn);
-		Map addPath(int turn);
-		void makeDeadEnd();
-		bool getIsDeadEnd();
+		Node* getHead();
+		int getX(Node *node);
+		int getY(Node *node);
+		void setPosition(Node *node, int x, int y);
+		int getLength(Node *node);
+		void setLength(Node *toAddTo, int length);
+		Node* getPath(Node *before, int turn);
+		Node* addPath(Node *toAddTo, int turn);
+		void makeDeadEnd(Node *node);
+		bool getIsDeadEnd(Node *node);
+		Node* getPreviousNode(Node *retrieval);
 	private:
-		Map *_previousNode;
-		int _pathLength;
-		int _turn; //0 = straight, 1 = left, 2 = right
-		Map *_nodes[3] = {};
-		int _x;
-		int _y;
-		bool _isDeadEnd = false;
+		Node *head;
 
 };
 

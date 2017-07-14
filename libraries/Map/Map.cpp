@@ -1,61 +1,74 @@
 #include "Arduino.h"
 #include "Map.h"
 
-Map::Map(Map *previousNode, int turn) {
-	*_previousNode = *previousNode;
-	_turn = turn;
+// Map::Map(Map *previousNode, int turn) {
+// 	*_previousNode = *previousNode;
+// 	// Serial.println(_previousNode -> getX());
+// 	_turn = turn;
 
-	// *_nodes = {null, null, null};
-}
+// 	// *_nodes = {null, null, null};
+// }
 Map::Map() {
-	_x = 0;
-	_y = 0;
-	_pathLength = 0;
+	head = new Node;
+	head -> _x = 0;
+	head -> _y = 0;
 }
 
-int Map::getX() {
-	return _x;
+Node* Map::getHead() {
+	return head;
 }
-int Map::getY() {
-	return _y;
+
+int Map::getX(Node *node) {
+	return node -> _x;
 }
-void Map::setPosition(int x, int y) {
-	_x = x;
-	_y = y;
+int Map::getY(Node *node) {
+	return node -> _y;
+}
+void Map::setPosition(Node *node, int x, int y) {
+	node -> _x = x;
+	node -> _y = y;
 }
 
 
-int Map::getLength() {
-	return _pathLength;
+int Map::getLength(Node *node) {
+	return node -> _pathLength;
 }
-void Map::setLength(int length) {
-	_pathLength = length;
-	switch(_turn) {
+void Map::setLength(Node *toAddTo, int length) {
+	toAddTo -> _pathLength = length;
+	// Serial.println(_previousNode -> getX());
+	Node *previousNode = toAddTo -> _previousNode;
+	switch(toAddTo -> _turn) {
 		case 0:
-			setPosition(_previousNode -> getX(), length + _previousNode -> getY());
+			setPosition(toAddTo, previousNode -> _x, length + previousNode -> _y);
 			break;
 		case 1:
-			setPosition(_previousNode -> getX() - length, _previousNode -> getY());
+			setPosition(toAddTo, previousNode -> _x - length, previousNode -> _y);
 			break;
 		case 2:
-			setPosition(_previousNode -> getX() + length, _previousNode -> getY());
+			setPosition(toAddTo, previousNode -> _x + length, previousNode -> _y);
 			break;
 	}
 }
 
 
-Map Map::addPath(int turn) {
-	Map node(this, turn);
-	*_nodes[turn] = node;
-	return node;
+Node* Map::addPath(Node *toAddTo, int turn) {
+	Node *temp = new Node;
+	temp -> _turn = turn;
+	temp -> _previousNode = toAddTo;
+	toAddTo -> _nodes[turn] = temp;
+	return temp;
 }
-Map Map::getPath(int turn) {
-	return *_nodes[turn];
+Node* Map::getPath(Node *before, int turn) {
+	return before -> _nodes[turn];
 }
 
-void Map::makeDeadEnd() {
-	_isDeadEnd = true;
+Node* Map::getPreviousNode(Node *retrieval) {
+	return retrieval -> _previousNode;
 }
-bool Map::getIsDeadEnd() {
-	return _isDeadEnd;
+
+void Map::makeDeadEnd(Node *node) {
+	node -> _isDeadEnd = true;
+}
+bool Map::getIsDeadEnd(Node *node) {
+	return node -> _isDeadEnd;
 }
