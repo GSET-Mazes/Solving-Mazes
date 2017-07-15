@@ -8,8 +8,6 @@ Node *curr;
 void setup() {
   Serial.begin(9600);
   curr = mapStart.addPath(mapStart.getHead(), 0);
-////  delay(500);
-////  mapStart.getPath(2);
 }
 
 void loop() {
@@ -19,7 +17,7 @@ void loop() {
 //  int daLength = rightOne.getLength();
 //  int newX = previousNode.getX() + daLength;
 //  int i = rightOne.getX();
-  Serial.println(mapStart.getY(curr));
+  Serial.println(!!mapStart.getPath(start, 1));
   delay(200);
 }
 
