@@ -18,10 +18,9 @@ const byte ultraSonic = 6; //$
 Encoder leftWheelEncoder(leftEncoder1, leftEncoder2);
 Encoder rightWheelEncoder(rightEncoder1, rightEncoder2);
 NewPing sonar(ultraSonic, ultraSonic, 3000);
-Map mapStart;
-Node *curr;
+Map mapController;
+Node *currentNode;
 
-int steps = 0;
 bool onDeadEnd = false;
 int lastTurn = 0;
 double distanceFromWalls = 7; //$
@@ -31,8 +30,8 @@ void setup() {
   pinMode(leftWheel, OUTPUT); //Left Motor
   pinMode(rightWheel, OUTPUT); //Right Motor
   Serial.begin(9600);
-  if(runOption() == 0) { //Ishan is awesome
-    curr = mapStart.addPath(mapStart.getHead(), 0);
+  if(runOption() == 0) { //Ishan is awesome and I make the robot move forward
+    currentNode = mapController.addPath(mapController.getHead(), 0);
     moveForwardOneCarLength();
   }
 }
@@ -46,30 +45,30 @@ void loop() {
     moveBackward();
     if(leftIRSensorValue > distanceFromWalls || rightIRSensorValue > distanceFromWalls) {
       moveBackwardOneCarLength();
-      int tempTurn = mapStart.getTurn(curr);
-      curr = mapStart.getPreviousNode(curr);
+      int tempTurn = mapController.getTurn(currentNode);
+      currentNode = mapController.getPreviousNode(currentNode);
       switch(tempTurn) {
         case 1:
           turnRight();
-          if(!!mapStart.getPath(curr, 0)) {
+          if(!!mapController.getPath(currentNode, 0)) {
             moveForwardOneCarLength();
             onDeadEnd = false;
           } else {
-            mapStart.makeDeadEnd(curr);
+            mapController.makeDeadEnd(currentNode);
             moveBackwardOneCarLength();
           }
           break;
         case 2:
           turnLeft();
-          if(!!mapStart.getPath(curr, 1)) {
+          if(!!mapController.getPath(currentNode, 1)) {
             turnLeft();
             moveForwardOneCarLength();
             onDeadEnd = false;
-          } else if(!!mapStart.getPath(curr, 0)) {
+          } else if(!!mapController.getPath(currentNode, 0)) {
             moveForwardOneCarLength();
             onDeadEnd = false;
           } else {
-            mapStart.makeDeadEnd(curr);
+            mapController.makeDeadEnd(currentNode);
             moveBackwardOneCarLength();
           }
           break;
@@ -125,6 +124,9 @@ int runOption() {
   double rightIRSensorValue = 39.4527 * (pow(0.0614007, (analogRead(rightIRSensor) / 200.0))) + 2.3; //using exponential regression stuff that Karan did
   double leftIRSensorValue = 39.4527 * (pow(0.0614007, (analogRead(leftIRSensor) / 200.0))) + 2.3; //using exponential regression stuff that Karan did
   double frontUSSensorValue = sonar.ping_cm();
+//  if(frontUSSensorValue > 153) {
+//    return -1;
+//  }
   if (leftIRSensorValue > distanceFromWalls && rightIRSensorValue > distanceFromWalls && frontUSSensorValue > distanceFromWalls) { //@ a 4-way
     return 1;
   } else if (leftIRSensorValue > distanceFromWalls && rightIRSensorValue > distanceFromWalls) { //@ a 3-way
@@ -144,41 +146,37 @@ int runOption() {
 }
 
 void fourWay() {
-  mapStart.setLength(curr, getBlocksTraveled());
-  mapStart.addPath(curr, 0);
-  mapStart.addPath(curr, 1);
-  curr = mapStart.addPath(curr, 2);
-  steps++;
+  mapController.setLength(currentNode, getBlocksTraveled());
+  mapController.addPath(currentNode, 0);
+  mapController.addPath(currentNode, 1);
+  currentNode = mapController.addPath(currentNode, 2);
 }
 void sidesThreeWay() {
-  mapStart.setLength(curr, getBlocksTraveled());
-  mapStart.addPath(curr, 1);
-  curr = mapStart.addPath(curr, 2);
-  steps++;
+  mapController.setLength(currentNode, getBlocksTraveled());
+  mapController.addPath(currentNode, 1);
+  currentNode = mapController.addPath(currentNode, 2);
 }
 void rightThreeWay() {
-  mapStart.setLength(curr, getBlocksTraveled());
-  mapStart.addPath(curr, 0);
-  curr = mapStart.addPath(curr, 2);
-  steps++;
+  mapController.setLength(currentNode, getBlocksTraveled());
+  mapController.addPath(currentNode, 0);
+  currentNode = mapController.addPath(currentNode, 2);
 }
 void leftThreeWay() {
-  mapStart.setLength(curr, getBlocksTraveled());
-  mapStart.addPath(curr, 0);
-  curr = mapStart.addPath(curr, 1);
-  steps++;
+  mapController.setLength(currentNode, getBlocksTraveled());
+  mapController.addPath(currentNode, 0);
+  currentNode = mapController.addPath(currentNode, 1);
 }
 void rightTwoWay() {
-  mapStart.setLength(curr, getBlocksTraveled());
-  curr = mapStart.addPath(curr, 2);
+  mapController.setLength(currentNode, getBlocksTraveled());
+  currentNode = mapController.addPath(currentNode, 2);
 }
 void leftTwoWay() {
-  mapStart.setLength(curr, getBlocksTraveled());
-  curr = mapStart.addPath(curr, 1);
+  mapController.setLength(currentNode, getBlocksTraveled());
+  currentNode = mapController.addPath(currentNode, 1);
 }
 void deadEnd() {
-  mapStart.setLength(curr, getBlocksTraveled());
-  mapStart.makeDeadEnd(curr);
+  mapController.setLength(currentNode, getBlocksTraveled());
+  mapController.makeDeadEnd(currentNode);
   onDeadEnd = true;
 }
 
