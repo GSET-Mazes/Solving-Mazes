@@ -2,18 +2,20 @@
 #include <Encoder.h>
 #include <NewPing.h>
 #include <Map.h>
-#include <NewPing.h>
 
 //pins
-const byte rightIRSensor = 11; //$
-const byte leftIRSensor = 10; //$
-const byte leftEncoder1 = 0; //$
-const byte leftEncoder2 = 0; //$
-const byte rightEncoder1 = 12; //$
-const byte rightEncoder2 = 2; //$
-const byte leftWheel = 0; //$
-const byte rightWheel = 0; //$
-const byte ultraSonic = 6; //$
+const byte button = 1;
+const byte rightIRSensor = A1;
+const byte leftIRSensor = A4;
+const byte ultraSonic = 12;
+const byte leftEncoder1 = 2;
+const byte leftEncoder2 = 7;
+const byte rightEncoder1 = 3;
+const byte rightEncoder2 = 9;
+const byte leftWheelFwd = 10;
+const byte leftWheelBck = 11;
+const byte rightWheelFwd = 6;
+const byte rightWheelBck = 5;
 
 Encoder leftWheelEncoder(leftEncoder1, leftEncoder2);
 Encoder rightWheelEncoder(rightEncoder1, rightEncoder2);
@@ -21,16 +23,25 @@ NewPing sonar(ultraSonic, ultraSonic, 3000);
 Map mapController;
 Node *currentNode;
 
+bool mode = false; //true = solving-mode; false = mapping-mode
 bool onDeadEnd = false;
-int lastTurn = 0;
-double distanceFromWalls = 7; //$
+
+double distanceFromWalls = 7;
+int speed = 60;
+int quarterTurn = 650;
+int oneCarLength = 900;
 
 //Initiates Session
 void setup() {
-  pinMode(leftWheel, OUTPUT); //Left Motor
-  pinMode(rightWheel, OUTPUT); //Right Motor
+  pinMode(button, INPUT);
+  pinMode(leftWheelFwd, OUTPUT); //Left Motor
+  pinMode(leftWheelBck, OUTPUT); //Left Motor
+  pinMode(rightWheelFwd, OUTPUT); //Right Motor
+  pinMode(rightWheelBck, OUTPUT); //Right Motor
+  pinMode(leftIRSensor, INPUT);
+  pinMode(rightIRSensor, INPUT);
   Serial.begin(9600);
-  if(runOption() == 0) { //Ishan is awesome and I make the robot move forward
+  if (runOption() == 0) { //Ishan is awesome
     currentNode = mapController.addPath(mapController.getHead(), 0);
     moveForwardOneCarLength();
   }
@@ -38,44 +49,78 @@ void setup() {
 
 void loop() {
   int option = runOption();
-  if(onDeadEnd) {
-    double rightIRSensorValue = 39.4527 * (pow(0.0614007, (analogRead(rightIRSensor) / 200.0))) + 2.3;
-    double leftIRSensorValue = 39.4527 * (pow(0.0614007, (analogRead(leftIRSensor) / 200.0))) + 2.3;
-    double frontUSSensorValue = sonar.ping_cm();
-    moveBackward();
-    if(leftIRSensorValue > distanceFromWalls || rightIRSensorValue > distanceFromWalls) {
-      moveBackwardOneCarLength();
-      int tempTurn = mapController.getTurn(currentNode);
-      currentNode = mapController.getPreviousNode(currentNode);
-      switch(tempTurn) {
-        case 1:
-          turnRight();
-          if(!!mapController.getPath(currentNode, 0)) {
-            moveForwardOneCarLength();
-            onDeadEnd = false;
-          } else {
-            mapController.makeDeadEnd(currentNode);
-            moveBackwardOneCarLength();
-          }
-          break;
-        case 2:
-          turnLeft();
-          if(!!mapController.getPath(currentNode, 1)) {
-            turnLeft();
-            moveForwardOneCarLength();
-            onDeadEnd = false;
-          } else if(!!mapController.getPath(currentNode, 0)) {
-            moveForwardOneCarLength();
-            onDeadEnd = false;
-          } else {
-            mapController.makeDeadEnd(currentNode);
-            moveBackwardOneCarLength();
-          }
-          break;
+  if (digitalRead(button) == HIGH) {
+    if (!mode) { //init button press
+      currentNode = mapController.getHead();
+      if (!mapController.getPath(currentNode, 1) && !mapController.getPath(currentNode, 2)) {
+        currentNode = mapController.getPath(currentNode, 0);
+        moveForwardOneCarLength();
       }
-      
     }
+    mode = true;
+  }
+
+  if (mode) {
+    if (option == 0) {
+      moveForward();
+    } else {
+      moveForwardOneCarLength();
+      if (mapController.getPath(currentNode, 0) && !mapController.getIsDeadEnd(mapController.getPath(currentNode, 0))) {
+        currentNode = mapController.getPath(currentNode, 0);
+        moveForwardOneCarLength();
+      } else if (mapController.getPath(currentNode, 1) && !mapController.getIsDeadEnd(mapController.getPath(currentNode, 1))) {
+        currentNode = mapController.getPath(currentNode, 1);
+        turnLeft();
+        moveForwardOneCarLength();
+      } else if (mapController.getPath(currentNode, 2) && !mapController.getIsDeadEnd(mapController.getPath(currentNode, 2))) {
+        currentNode = mapController.getPath(currentNode, 2);
+        turnRight();
+        moveForwardOneCarLength();
+      } else {
+        Serial.println("Error mapping || no possible solutions || Maze solved!!");
+        for (;;);
+      }
+    }
+
   } else {
+    if (onDeadEnd) {
+      double rightIRSensorValue = getRightIRSensorValue();
+      double leftIRSensorValue = getLeftIRSensorValue();
+      double frontUSSensorValue = sonar.ping_cm();
+      moveBackward();
+      if (leftIRSensorValue > distanceFromWalls || rightIRSensorValue > distanceFromWalls) {
+        moveBackwardOneCarLength();
+        int tempTurn = mapController.getTurn(currentNode);
+        currentNode = mapController.getPreviousNode(currentNode);
+        switch (tempTurn) {
+          case 1:
+            turnRight();
+            if (!!mapController.getPath(currentNode, 0)) {
+              moveForwardOneCarLength();
+              onDeadEnd = false;
+            } else {
+              mapController.makeDeadEnd(currentNode);
+              moveBackwardOneCarLength();
+            }
+            break;
+          case 2:
+            turnLeft();
+            if (!!mapController.getPath(currentNode, 1)) {
+              turnLeft();
+              moveForwardOneCarLength();
+              onDeadEnd = false;
+            } else if (!!mapController.getPath(currentNode, 0)) {
+              moveForwardOneCarLength();
+              onDeadEnd = false;
+            } else {
+              mapController.makeDeadEnd(currentNode);
+              moveBackwardOneCarLength();
+            }
+            break;
+        }
+
+      }
+    } else {
       if (option == 0) {
         moveForward();
       } else if (option == 1) {
@@ -112,7 +157,9 @@ void loop() {
         stopMoving();
         deadEnd();
       }
+    }
   }
+
 
 }
 
@@ -121,12 +168,12 @@ void loop() {
    //front has to be right at beginning of intersection
 */
 int runOption() {
-  double rightIRSensorValue = 39.4527 * (pow(0.0614007, (analogRead(rightIRSensor) / 200.0))) + 2.3; //using exponential regression stuff that Karan did
-  double leftIRSensorValue = 39.4527 * (pow(0.0614007, (analogRead(leftIRSensor) / 200.0))) + 2.3; //using exponential regression stuff that Karan did
+  double rightIRSensorValue = getRightIRSensorValue(); //using exponential regression stuff that Karan did
+  double leftIRSensorValue = getLeftIRSensorValue(); //using exponential regression stuff that Karan did
   double frontUSSensorValue = sonar.ping_cm();
-//  if(frontUSSensorValue > 153) {
-//    return -1;
-//  }
+  //  if(frontUSSensorValue > 153) {
+  //    return -1;
+  //  }
   if (leftIRSensorValue > distanceFromWalls && rightIRSensorValue > distanceFromWalls && frontUSSensorValue > distanceFromWalls) { //@ a 4-way
     return 1;
   } else if (leftIRSensorValue > distanceFromWalls && rightIRSensorValue > distanceFromWalls) { //@ a 3-way
@@ -194,56 +241,78 @@ int getBlocksTraveled() {
 
 
 
-//Starts both motors in the forward direction
-void moveForward() {
-  analogWrite(rightWheel, 128);
-  analogWrite(leftWheel, 128);
+
+void moveForward() { //$
+  analogWrite(rightWheelBck, 0);
+  analogWrite(leftWheelBck, 0);
+  analogWrite(rightWheelFwd, speed);
+  analogWrite(leftWheelFwd, speed);
 }
-void moveForwardOneCarLength() {
+void moveForwardOneCarLength() { //$
   resetEncoders();
-  while (leftWheelEncoder.read() < 90 && rightWheelEncoder.read() < 90) {
-    moveForward();
+  while (leftWheelEncoder.read() < oneCarLength || rightWheelEncoder.read() < oneCarLength) {
+    //moveForward();
+    if(leftWheelEncoder.read() < oneCarLength) {
+      analogWrite(leftWheelFwd, speed);
+    } else {
+      leftStop();
+    }
+    if(rightWheelEncoder.read() < oneCarLength) {
+      analogWrite(rightWheelFwd, speed);
+    } else {
+      rightStop();
+    }
   }
   stopMoving();
 }
 
 void moveBackward() {
-  analogWrite(leftWheel, -128);
-  analogWrite(rightWheel, -128);
+  analogWrite(rightWheelFwd, 0);
+  analogWrite(leftWheelFwd, 0);
+  analogWrite(rightWheelBck, speed);
+  analogWrite(leftWheelBck, speed);
 }
-void moveBackwardOneCarLength() {
+void moveBackwardOneCarLength() { //$
   resetEncoders();
-  while (leftWheelEncoder.read() > -90 && rightWheelEncoder.read() > -90) {
+  while (leftWheelEncoder.read() > -quarterTurn && rightWheelEncoder.read() > -quarterTurn) {
     moveBackward();
   }
   stopMoving();
 }
 
 //Stops all motor movement
+
 void stopMoving() {
-  analogWrite(rightWheel, 0);
-  analogWrite(leftWheel, 0);
+  leftStop();
+  rightStop();
+}
+void leftStop() {
+  analogWrite(leftWheelFwd, 0);
+  analogWrite(leftWheelBck, 0);
+}
+void rightStop() {
+  analogWrite(rightWheelFwd, 0);
+  analogWrite(rightWheelBck, 0);
 }
 
-//Makes robot turn left at a 90 degree angle
-//Current values of 90 and -90 are experimental
-void turnRight() {
+
+void turnRight() { //$
   resetEncoders();
-  while (leftWheelEncoder.read() < 90 && rightWheelEncoder.read() > -90) {
-    analogWrite(rightWheel, -128);
-    analogWrite(leftWheel, 128);
+  stopMoving();
+  while (leftWheelEncoder.read() < quarterTurn && rightWheelEncoder.read() > -quarterTurn) {
+    analogWrite(leftWheelFwd, speed);
+    analogWrite(rightWheelBck, speed);
   }
   stopMoving();
   resetEncoders();
 }
 
-//Makes robot turn left at a 90 degree angle
-//Current values of -90 and 90 are experimental
-void turnLeft() {
+void turnLeft() { //$
   resetEncoders();
-  while (leftWheelEncoder.read() < -90 && rightWheelEncoder.read() > 90) {
-    analogWrite(rightWheel, 128);
-    analogWrite(leftWheel, -128);
+  stopMoving();
+  while (leftWheelEncoder.read() < -quarterTurn && rightWheelEncoder.read() > quarterTurn) {
+    analogWrite(leftWheelBck, speed);
+    analogWrite(rightWheelFwd, speed);
   }
   stopMoving();
   resetEncoders();
@@ -253,5 +322,12 @@ void turnLeft() {
 void resetEncoders() {
   leftWheelEncoder.write(0);
   rightWheelEncoder.write(0);
+}
+
+double getRightIRSensorValue() {
+  return (39.4527 * (pow(0.0614007, (analogRead(rightIRSensor) / 200.0))) + 2.3); //using exponential regression stuff that Karan did
+}
+double getLeftIRSensorValue() {
+  return (39.4527 * (pow(0.0614007, (analogRead(leftIRSensor) / 200.0))) + 2.3); //using exponential regression stuff that Karan did
 }
 
